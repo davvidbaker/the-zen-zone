@@ -21,8 +21,6 @@ class App extends Component {
 
   completedGame(totalTime) {
     this.setState({
-      game: null,
-      time: null,
       totalTime: this.state.totalTime + totalTime,
       currentPage: 'reflection',
     });

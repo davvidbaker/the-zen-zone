@@ -5,6 +5,20 @@ import '../styles/GameBreak.css';
 import '../styles/Carousel.css';
 import breakSets from '../data/BreakSets.js';
 
+import photo from '../assets/spd.jpg';
+
+function getPixel(x, y, ctx) {
+  var p = ctx.getImageData(x, y, 1, 1).data;
+  var hex = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
+  return hex;
+}
+
+function rgbToHex(r, g, b) {
+  if (r > 255 || g > 255 || b > 255)
+    throw "Invalid color component";
+  return ((r << 16) | (g << 8) | b).toString(16);
+}
+
 class GameBreak extends Component {
 
   constructor(props) {
@@ -30,9 +44,18 @@ class GameBreak extends Component {
   }
 
   componentDidMount() {
+    this.photoCtx = this.offscreenCanvas.getContext('2d');
+    const image = new Image();
+    image.src = photo;
+    image.onload = () => {
+      this.photoCtx.drawImage(image, 0, 0, 1000, 600)
+    }
+    
     this.setupSets(this.totalSets);
     this.drawInitialSets();
+
   }
+  
 
   setupSets(setCount) {
 
@@ -64,7 +87,8 @@ class GameBreak extends Component {
       this.drawPoint(this.currentSetData.points[0]);
     }
 
-    this.currentSetData = this.sets[this.currentSet];
+    this.currentSetData = this.sets[this.currentSet];    
+
   }
 
 
@@ -74,12 +98,16 @@ class GameBreak extends Component {
     let context = this.currentSetData.context;
 
     let color = breakSets[this.currentSet].colors[point.level];
+
+    color = getPixel(point.x, point.y, this.photoCtx);
+    console.log(`point.x`, point.x);
+
     context.fillStyle = color;
 
+    // context.fillRect(point.x - point.radius, point.y - point.radius, point.radius  *2, point.radius * 2);
     context.beginPath();
     context.arc(point.x, point.y, point.radius, 0, 2 * Math.PI);
     context.fill();
-
   }
 
   clearPoint(point) {
@@ -94,7 +122,7 @@ class GameBreak extends Component {
     // Find what needs splitting
     for( let i = 0; i < this.currentSetData.points.length; i++) {
       let point = this.currentSetData.points[i];
-      if( point.active === true && point.level < 6) {
+      if( point.active === true && point.level < 10) {
         foundActive = true;
         var oldDistance = Math.hypot(this.oldMousePosition.x - point.x, this.oldMousePosition.y - point.y);
         var newDistance = Math.hypot(this.newMousePosition.x - point.x, this.newMousePosition.y - point.y);
@@ -159,6 +187,7 @@ class GameBreak extends Component {
           active: true,
           level: point.level + 1
         }
+
 
         this.currentSetData.points.push(pointA);
         this.currentSetData.points.push(pointB);
@@ -264,6 +293,8 @@ class GameBreak extends Component {
           <section className="carousel" style={carouselStyles}>
             {sets}
           </section>
+          <canvas width={1000} height={1000} ref={r => { this.offscreenCanvas = r }}></canvas>
+
         </section>
       </div>
     );
